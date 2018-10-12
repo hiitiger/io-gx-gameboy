@@ -1,13 +1,18 @@
 import { RamSize } from "./specs.js";
+import { Cartridge } from "./cartridge.js";
 
 export class Memory {
   data: Uint8Array = new Uint8Array(RamSize);
 
+  rom: Cartridge;
 
   public load(addr: number, data: Uint8Array) {
     this.data.set(data, addr);
   }
 
+  public loadRom(rom: Cartridge) {
+    this.rom = rom;
+  }
 
   public readByte(addr: number) {
     if (addr < 0 || addr >= RamSize) {
