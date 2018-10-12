@@ -1,0 +1,40 @@
+<html>
+
+<head>
+    <title>Graphics</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: sans-serif;
+            text-align: center;
+        }
+
+        #content{ 
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #canvas {
+            background: #000000;
+            box-shadow: 0 0 20px #353535;
+            touch-action: none;
+
+            display: block;
+            image-rendering: pixelated;
+            height: 60vh;
+            margin: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="content">
+        <canvas id="canvas" tabindex="1" width="160" height="144">
+        </canvas>
+        <!-- <button id='btn'>start...</button> -->
+    </div>
+    <script type="module" src="./js/main.js"></script>
+</body>
+
+</html>

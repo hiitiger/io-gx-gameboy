@@ -1,0 +1,19 @@
+{
+    "compileOnSave": true,
+    
+    "compilerOptions": {
+         "typeRoots": [
+            "node_modules/@types"
+        ],
+        "target": "es6",
+        "module": "es6",
+        "sourceMap": false,
+        "outDir": "./public/js"
+    },
+    "include": [
+        "./src/**/*"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}
