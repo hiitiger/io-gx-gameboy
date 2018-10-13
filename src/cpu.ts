@@ -2,9 +2,9 @@ import { Memory } from "./memory.js";
 import { Cartridge } from "./cartridge.js";
 import { h2i, w2h, b2b, opcodeHex, b2h } from "./utils.js";
 import { FLAGOFFSETS } from "./specs.js";
-import { OpcodeTable, EXT_OpcodeTable } from "./opcodes.js";
 import { Register, Registers } from "./register.js";
 import * as logger from "./logger.js";
+import { buildOpMap, IOpcodeDescription, buildCBOpMap } from "./ops/index.js";
 
 function trimRegAddr(s: string) {
   return s.replace(/[\\(\\)]/g, "");
@@ -12,15 +12,20 @@ function trimRegAddr(s: string) {
 
 export class Cpu {
   private mem: Memory;
-
   private registers: Registers;
-
   private cycles: number;
+  private ops: IOpcodeDescription[];
+  private cbops: IOpcodeDescription[];
 
   constructor(mem: Memory) {
+    this.cycles = 0;
     this.mem = mem;
     this.registers = new Registers();
     this.reset();
+    this.ops = new Array(0xff).fill(null);
+    this.cbops = new Array(0xff).fill(null);
+    buildOpMap(this.ops);
+    buildCBOpMap(this.cbops);
   }
 
   public printReg() {
@@ -54,7 +59,7 @@ export class Cpu {
       this.excute_next_opcode();
       // this.printReg();
 
-      logger.log(`this.cycles ${this.cycles}`)
+      logger.log(`this.cycles ${this.cycles}`);
     }
 
     this.cycles -= cyclesPerFrame;
@@ -62,106 +67,356 @@ export class Cpu {
 
   public excute_next_opcode() {
     const opcode = this.cpu_mem8bitRead();
-    logger.log(`opcode: ${opcodeHex(opcode)}`);
+    logger.log(`PC:${this.registers.PC}, opcode: ${opcodeHex(opcode)}`);
 
-    const instruction = OpcodeTable[opcodeHex(opcode)];
-    this.cycles += instruction.cycles;
+    if (opcode === 0xcb) {
+      this.excute_ext_opcode();
+    } else {
+      const instruction = this.ops[opcode];
 
-    const cpu = this;
-    instruction.fn(cpu);
+      const cpu = this;
+      instruction.fn(cpu);
+    }
   }
 
   public excute_ext_opcode() {
     const opcode = this.cpu_mem8bitRead();
-    logger.log(`opcode: ${opcodeHex(opcode)}`);
+    logger.log(`PC:${this.registers.PC}, exopcode: ${opcodeHex(opcode)}`);
 
-    const instruction = EXT_OpcodeTable[opcodeHex(opcode)];
-    this.cycles += instruction.cycles;
+    const instruction = this.cbops[opcode];
 
     const cpu = this;
     instruction.fn(cpu);
   }
 
-  public SWAP_n(reg: string) {
-    if (reg === "(HL)") {
+  public NOOP() {
+    this.cycles += 4;
+  }
+
+  public INC_r(r: string) {
+    const value = (this.readReg8bit(r) + 1) & 0xff;
+    this.writeReg8bit(r, value);
+
+    this.registers.NF = false;
+    this.registers.ZF = value === 0;
+    this.registers.HF = (value & 0xf) === 0;
+
+    this.cycles += 4;
+  }
+
+  public INC_HL_() {
+    const value = (this.readMemory8bit(this.registers.HL) + 1) & 0xff;
+    this.writeMemory8bit(this.registers.HL, value);
+
+    this.registers.NF = false;
+    this.registers.ZF = value === 0;
+    this.registers.HF = (value & 0xf) === 0;
+    this.cycles += 12;
+  }
+
+  public DEC_r(r: string) {
+    const value = (this.readReg8bit(r) - 1) & 0xff;
+    this.writeReg8bit(r, value);
+
+    this.registers.NF = true;
+    this.registers.ZF = value === 0;
+    this.registers.HF = (value & 0xf) === 0xf;
+
+    this.cycles += 4;
+  }
+
+  public DEC_HL_() {
+    const value = (this.readMemory8bit(this.registers.HL) - 1) & 0xff;
+    this.writeMemory8bit(this.registers.HL, value);
+
+    this.registers.NF = true;
+    this.registers.ZF = value === 0;
+    this.registers.HF = (value & 0xf) === 0;
+    this.cycles += 12;
+  }
+
+  public LD_rr_nn(rr: string) {
+    this.writeReg16bit(rr, this.readMemory16bit(this.registers.PC));
+    this.registers.PC = (this.registers.PC + 2) & 0xffff;
+    this.cycles += 12;
+  }
+
+  public LD_rr_rr(rr1: string, rr2: string) {
+    this.writeReg16bit(rr1, this.readReg16bit(rr2));
+    this.cycles += 8;
+  }
+
+  public LDHL_SP_n() {
+    let value = (this.readMemory8bit(this.registers.PC) << 24) >> 24;
+    this.registers.PC = (this.registers.PC + 1) & 0xffff;
+    this.registers.HL = (this.registers.SP + value) & 0xffff;
+
+    value = this.registers.SP ^ value ^ this.registers.HL;
+
+    this.registers.ZF = false;
+    this.registers.NF = false;
+    this.registers.CF = (value & 0x100) === 0x100;
+    this.registers.HF = (value & 0x10) === 0x10;
+    this.cycles += 12;
+  }
+
+  public LD_nn_SP() {
+    this.writeMemory16bit(
+      this.readMemory16bit(this.registers.PC),
+      this.registers.SP
+    );
+    this.registers.PC = (this.registers.PC + 2) & 0xffff;
+    this.cycles += 20;
+  }
+
+  public PUSH_rr(rr: string) {
+    const value = this.readReg16bit(rr);
+    this.registers.SP = this.registers.SP - 1;
+    this.writeMemory8bit(this.registers.SP, value >> 8);
+    this.registers.SP = this.registers.SP - 1;
+    this.writeMemory8bit(this.registers.SP, value & 0xff);
+    this.cycles += 16;
+  }
+
+  public POP_rr(rr: string) {
+    const value = this.readMemory16bit(this.registers.SP);
+    this.registers.SP = this.registers.SP + 2;
+    this.writeReg16bit(rr, value);
+    this.cycles += 12;
+  }
+
+  public ADD_A_r(r: string) {
+    const oldValue = this.registers.A;
+    const addValue = this.readReg8bit(r);
+    const value = this.registers.A + addValue;
+    this.registers.A = value & 0xff;
+    this.registers.ZF = this.registers.A === 0;
+    this.registers.NF = false;
+    this.registers.HF = (oldValue & 0xf) + (addValue & 0xf) > 0xf;
+    this.registers.CF = value > 0xff;
+    this.cycles += 4;
+  }
+  public ADD_A_HL_() {
+    const oldValue = this.registers.A;
+    const addValue = this.readMemory8bit(this.registers.HL);
+    const value = this.registers.A + addValue;
+    this.registers.A = value & 0xff;
+    this.registers.ZF = this.registers.A === 0;
+    this.registers.NF = false;
+    this.registers.HF = (oldValue & 0xf) + (addValue & 0xf) > 0xf;
+    this.registers.CF = value > 0xff;
+
+    this.cycles += 8;
+  }
+  public ADD_A_n() {
+    const oldValue = this.registers.A;
+    const addValue = this.readMemory8bit(this.registers.PC);
+    this.registers.PC = (this.registers.PC + 1) & 0xffff;
+    const value = this.registers.A + addValue;
+    this.registers.A = value & 0xff;
+    this.registers.ZF = this.registers.A === 0;
+    this.registers.NF = false;
+    this.registers.HF = (oldValue & 0xf) + (addValue & 0xf) > 0xf;
+    this.registers.CF = value > 0xff;
+
+    this.cycles += 8;
+  }
+
+  public LD_BC_nn() {
+    this.registers.BC = this.readMemory16bit(this.registers.PC);
+    this.registers.PC = (this.registers.PC + 2) & 0xffff;
+    this.cycles += 12;
+  }
+
+  public LD_DE_nn() {
+    this.registers.DE = this.readMemory16bit(this.registers.PC);
+    this.registers.PC = (this.registers.PC + 2) & 0xffff;
+    this.cycles += 12;
+  }
+
+  public LD_HL_nn() {
+    this.registers.HL = this.readMemory16bit(this.registers.PC);
+    this.registers.PC = (this.registers.PC + 2) & 0xffff;
+    this.cycles += 12;
+  }
+
+  public LD_SP_nn() {
+    this.registers.SP = this.readMemory16bit(this.registers.PC);
+    this.registers.PC = (this.registers.PC + 2) & 0xffff;
+    this.cycles += 12;
+  }
+
+  public LD_BC_A() {
+    this.writeMemory8bit(this.registers.BC, this.registers.A);
+    this.cycles += 8;
+  }
+
+  public LD_DE_A() {
+    this.writeMemory8bit(this.registers.DE, this.registers.A);
+    this.cycles += 8;
+  }
+
+  public LD_nn_A() {
+    this.writeMemory8bit(
+      this.readMemory16bit(this.registers.PC),
+      this.registers.A
+    );
+    this.registers.PC = (this.registers.PC + 2) & 0xffff;
+    this.cycles += 16;
+  }
+
+  public LD_A_0xFF00C_() {
+    this.registers.A = this.readMemory8bit(this.registers.C + 0xff00);
+    this.cycles += 8;
+  }
+
+  public LD_0xFF00C_A() {
+    this.writeMemory8bit(this.registers.C + 0xff00, this.registers.A);
+    this.cycles += 8;
+  }
+
+  public LD_0xFF00n_A() {
+    this.writeMemory8bit(
+      this.readMemory8bit(this.registers.PC) + 0xff00,
+      this.registers.A
+    );
+    this.registers.PC = (this.registers.PC + 1) & 0xffff;
+    this.cycles += 12;
+  }
+
+  public LD_A_0xFF00n_() {
+    this.registers.A = this.readMemory8bit(
+      this.readMemory8bit(this.registers.PC) + 0xff00
+    );
+    this.registers.PC = (this.registers.PC + 1) & 0xffff;
+    this.cycles += 12;
+  }
+
+  public LDD_A_HL_() {
+    this.registers.A = this.readMemory8bit(this.registers.HL);
+    this.registers.HL = (this.registers.HL - 1) & 0xffff;
+    this.cycles += 8;
+  }
+
+  public LDI_A_HL_() {
+    this.registers.A = this.readMemory8bit(this.registers.HL);
+    this.registers.HL = (this.registers.HL + 1) & 0xffff;
+    this.cycles += 8;
+  }
+
+  public XOR_A() {
+    this.registers.A = 0;
+    this.registers.F = 0;
+    this.registers.ZF = true;
+
+    this.cycles += 4;
+  }
+
+  public LD_r_n(r: string) {
+    this.writeReg8bit(r, this.readMemory8bit(this.registers.PC));
+    this.registers.PC = (this.registers.PC + 1) & 0xffff;
+    this.cycles += 8;
+  }
+
+  public LDA_rr_(rr: string) {
+    this.registers.A = this.readMemory8bit(this.readReg16bit(rr));
+    this.cycles += 8;
+  }
+
+  public LDA_nn_() {
+    this.registers.A = this.readMemory8bit(
+      this.readMemory16bit(this.registers.PC)
+    );
+    this.registers.PC = (this.registers.PC + 2) & 0xffff;
+    this.cycles += 16;
+  }
+
+  public LDD_HL_A() {
+    this.writeMemory8bit(this.registers.HL, this.registers.A);
+    this.registers.HL = (this.registers.HL - 1) & 0xffff;
+    this.cycles += 8;
+  }
+
+  public LDI_HL_A() {
+    this.writeMemory8bit(this.registers.HL, this.registers.A);
+    this.registers.HL = (this.registers.HL + 1) & 0xffff;
+    this.cycles += 8;
+  }
+
+  public JR_CC_e(flag: string, cond: boolean) {
+    if (this.readFlag(flag) === cond) {
+      const add = (this.cpu_mem8bitRead() << 24) >> 24;
+      this.registers.PC = (this.registers.PC + add) & 0xffff;
+      this.cycles += 12;
     } else {
-      let value = this.readReg8bit(reg);
-      value = ((value & 0xf0) >> 4) | ((value & 0x0f) << 4);
-      this.writeReg8bit(reg, value);
-      this.resetFlags();
-      if (value === 0) {
-        this.setFlag("Z");
-      }
+      this.registers.PC = (this.registers.PC + 1) & 0xffff;
+      this.cycles += 8;
     }
   }
 
-  public BIT_TEST(v: number, bit: number) {
-    v = v & (1 << bit);
-    if (v === 0) {
-      this.setFlag("Z");
-    } else {
-      this.resetFlag("Z");
-    }
-
-    this.resetFlag("N");
-    this.resetFlag("H");
+  public LD_r_r(r1: string, r2: string) {
+    this.writeReg8bit(r1, this.readReg8bit(r2));
+    this.cycles += 4;
   }
 
-  public BIT_TEST_REG(reg: string, bit: number) {
+  public LD_r_HL_(r: string) {
+    this.writeReg8bit(r, this.readMemory8bit(this.registers.HL));
+    this.cycles += 8;
+  }
+
+  public LD_HL_r(r: string) {
+    this.writeMemory8bit(this.registers.HL, this.readReg8bit(r));
+    this.cycles += 8;
+  }
+
+  public LD_HL_n() {
+    this.writeMemory8bit(
+      this.registers.HL,
+      this.readMemory8bit(this.registers.PC)
+    );
+    this.registers.PC += 1;
+    this.cycles += 12;
+  }
+
+  public SWAP_r(r: string) {
+    let value = this.readReg8bit(r);
+    value = ((value & 0xf0) >> 4) | ((value & 0x0f) << 4);
+    this.writeReg8bit(r, value);
+
+    this.resetFlags();
+    this.registers.ZF = value === 0;
+
+    this.cycles += 8;
+  }
+
+  public SWAP_HL_() {
+    let value = this.readMemory8bit(this.registers.HL);
+    value = ((value & 0xf0) >> 4) | ((value & 0x0f) << 4);
+    value = ((value & 0xf0) >> 4) | ((value & 0x0f) << 4);
+    this.writeMemory8bit(this.registers.HL, value);
+
+    this.resetFlags();
+    this.registers.ZF = value === 0;
+
+    this.cycles += 16;
+  }
+
+  public BIT_TEST(value: number, bit: number) {
+    value = value & (1 << bit);
+
+    this.registers.ZF = value === 0;
+    this.registers.NF = false;
+    this.registers.HF = false;
+  }
+
+  public BIT_b_r(reg: string, bit: number) {
     this.BIT_TEST(this.readReg8bit(reg), bit);
+    this.cycles += 8;
   }
 
-  public BIT_TEST_MEM(bit: number) {
-    this.BIT_TEST(this.mem.readByte(this.readReg16bit("HL")), bit);
-  }
-
-  public LD_nn_n(reg: string) {
-    this.cpu_reg8bitLoad(reg);
-  }
-
-  public LD_r1_r2(r1: string, r2: string) {
-    if (r1 === "(HL)") {
-      if (r2 === "n") {
-        this.mem.writeByte(this.registers.HL, this.cpu_mem8bitRead());
-      } else {
-        this.mem.writeByte(this.registers.HL, this.readReg8bit(r2));
-      }
-    } else if (r2 === "(HL)") {
-      this.cpu_reg8bitLoadMem(r1, this.readReg16bit("HL"));
-    } else {
-      this.cpu_reg8bitLoadReg(r1, r2);
-    }
-  }
-
-  public LD_A_n(a: string) {
-    if (a.startsWith("(")) {
-      if (a === "(BC)" || a === "(DE)" || a === "(HL)") {
-        this.cpu_reg8bitLoadMem("A", this.readReg16bit(trimRegAddr(a)));
-      } else if (a === "(nn)") {
-        this.cpu_reg8bitLoadMem(
-          "A",
-          this.mem.readByte(this.cpu_mem16bitRead())
-        );
-      }
-    } else if (a === "#") {
-      this.cpu_reg8bitLoadMem("A", this.cpu_mem8bitRead());
-    }
-  }
-
-  public LD_n_A(a: string) {
-    if (a === "(BC)" || a === "(DE)" || a === "(HL)") {
-      this.mem.writeByte(
-        this.readReg16bit(trimRegAddr(a)),
-        this.readReg8bit("A")
-      );
-    } else if (a === "(nn)") {
-      this.mem.writeByte(this.cpu_mem16bitRead(), this.readReg8bit("A"));
-    }
-  }
-
-  //16bit load
-  public LD_n_nn(reg: string) {
-    this.cpu_reg16bitLoad(reg);
+  public BIT_b_HL_(bit: number) {
+    this.BIT_TEST(this.readMemory8bit(this.registers.HL), bit);
+    this.cycles += 16;
   }
 
   public XOR_n(reg: string) {
@@ -173,21 +428,6 @@ export class Cpu {
       if (this.readReg8bit("A") === 0) {
         this.setFlag("Z");
       }
-    }
-  }
-
-  public LDD_HL_A() {
-    this.mem.writeByte(this.readReg16bit("HL"), this.readReg8bit("A"));
-
-    this.writeReg16bit("HL", this.readReg16bit("HL") - 1);
-  }
-
-  public JR_NZ_e() {
-    if (this.readFlag("Z") === 0) {
-      const add = (this.cpu_mem8bitRead() << 24) >> 24;
-      this.registers.PC += add;
-    } else {
-      this.registers.PC = this.registers.PC + 1;
     }
   }
 
@@ -230,8 +470,24 @@ export class Cpu {
     this.writeReg16bit(r1, value);
   }
 
+  public readMemory8bit(addr: number) {
+    return this.mem.readByte(addr);
+  }
+
+  public readMemory16bit(addr: number) {
+    return this.mem.readWord(addr);
+  }
+
+  public writeMemory8bit(addr: number, val: number) {
+    return this.mem.writeByte(addr, val);
+  }
+
+  public writeMemory16bit(addr: number, val: number) {
+    return this.mem.writeWord(addr, val);
+  }
+
   public readFlag(name: string) {
-    return this.registers.F & FLAGOFFSETS[name];
+    return this.registers.F & FLAGOFFSETS[name] ? true : false;
   }
 
   public setFlag(name: string) {

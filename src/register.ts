@@ -1,3 +1,5 @@
+import { FLAGOFFSETS } from "./specs.js";
+
 export class Register {
   low: number = 0;
   high: number = 0;
@@ -55,8 +57,8 @@ export class Registers {
   }
 
   set AF(val: number) {
-    this.F = val & 0xff
-    this.A = val << 8;
+    this.F = val & 0xff;
+    this.A = (val >> 8) & 0xff;
   }
 
   get BC() {
@@ -145,5 +147,53 @@ export class Registers {
 
   set L(val: number) {
     this.rHL.low = val;
+  }
+
+  get ZF() {
+    return this.FLAG & FLAGOFFSETS.Z ? true : false;
+  }
+
+  set ZF(val: boolean) {
+    if (val) {
+      this.FLAG = this.FLAG | FLAGOFFSETS.Z;
+    } else {
+      this.FLAG = this.FLAG & ~FLAGOFFSETS.Z;
+    }
+  }
+
+  get NF() {
+    return this.FLAG & FLAGOFFSETS.N ? true : false;
+  }
+
+  set NF(val: boolean) {
+    if (val) {
+      this.FLAG = this.FLAG | FLAGOFFSETS.N;
+    } else {
+      this.FLAG = this.FLAG & ~FLAGOFFSETS.N;
+    }
+  }
+
+  get HF() {
+    return this.FLAG & FLAGOFFSETS.H ? true : false;
+  }
+
+  set HF(val: boolean) {
+    if (val) {
+      this.FLAG = this.FLAG | FLAGOFFSETS.H;
+    } else {
+      this.FLAG = this.FLAG & ~FLAGOFFSETS.H;
+    }
+  }
+
+  get CF() {
+    return this.FLAG & FLAGOFFSETS.C ? true : false;
+  }
+
+  set CF(val: boolean) {
+    if (val) {
+      this.FLAG = this.FLAG | FLAGOFFSETS.C;
+    } else {
+      this.FLAG = this.FLAG & ~FLAGOFFSETS.C;
+    }
   }
 }

@@ -36,7 +36,12 @@ export class Memory {
     return (high << 8) + low;
   }
 
-  public writeByte(addr: number, value: number) {}
+  public writeByte(addr: number, value: number) {
+  
+  }
 
-  public writeWord(addr: number, value: number) {}
+  public writeWord(addr: number, value: number) {
+    this.writeByte(addr, value & 0xff);
+    this.writeByte((addr + 1) & 0xffff, value >> 8);
+  }
 }
