@@ -9,6 +9,13 @@ interface IOpcodeTable {
   [key: string]: IOpcodeDescription;
 }
 
+const NOP: IOpcodeTable = {
+  "0x00": {
+    fn: () => {},
+    cycles: 4
+  }
+};
+
 const XOR_n: IOpcodeTable = {
   "0xAF": {
     fn: (cpu: Cpu) => cpu.XOR_n("A"),
@@ -16,19 +23,19 @@ const XOR_n: IOpcodeTable = {
   }
 };
 
-const LDD_HL_A : IOpcodeTable = {
+const LDD_HL_A: IOpcodeTable = {
   "0x32": {
     fn: (cpu: Cpu) => cpu.LDD_HL_A(),
     cycles: 8
   }
-}
+};
 
 const CB: IOpcodeTable = {
   "0xCB": {
     fn: (cpu: Cpu) => cpu.excute_ext_opcode(),
     cycles: 0
   }
-}
+};
 
 const LD_nn_n: IOpcodeTable = {
   "0x06": {
@@ -342,6 +349,13 @@ const LD_n_nn: IOpcodeTable = {
   }
 };
 
+const JUMPS: IOpcodeTable = {
+  "0x20": {
+    fn: (cpu: Cpu) => cpu.JR_NZ_e(),
+    cycles: 8
+  }
+}
+
 export const OpcodeTable: IOpcodeTable = {
   ...LD_nn_n,
   ...LD_A_n,
@@ -350,16 +364,285 @@ export const OpcodeTable: IOpcodeTable = {
   ...LD_n_nn,
   ...XOR_n,
   ...LDD_HL_A,
-  ...CB
-}
+  ...CB,
+  ...NOP,
+  ...JUMPS
+};
 
 const EXT_SWAP_n = {
   "0x37": {
     fn: (cpu: Cpu) => cpu.SWAP_n("A"),
-    cycles: 8 
+    cycles: 8
   }
-}
+};
+
+const EXT_BIT_TEST = {
+  "0x40": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("B", 0),
+    cycles: 8
+  },
+  "0x41": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("C", 0),
+    cycles: 8
+  },
+  "0x42": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("D", 0),
+    cycles: 8
+  },
+  "0x43": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("E", 0),
+    cycles: 8
+  },
+  "0x44": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("H", 0),
+    cycles: 8
+  },
+  "0x45": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("L", 0),
+    cycles: 8
+  },
+  "0x46": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_MEM(0),
+    cycles: 8
+  },
+  "0x47": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("A", 0),
+    cycles: 8
+  },
+
+  "0x48": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("B", 1),
+    cycles: 8
+  },
+  "0x49": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("C", 1),
+    cycles: 8
+  },
+  "0x4A": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("D", 1),
+    cycles: 8
+  },
+  "0x4B": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("E", 1),
+    cycles: 8
+  },
+  "0x4C": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("H", 1),
+    cycles: 8
+  },
+  "0x4D": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("L", 1),
+    cycles: 8
+  },
+  "0x4E": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_MEM(1),
+    cycles: 16
+  },
+  "0x4F": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("A", 1),
+    cycles: 8
+  },
+
+  "0x50": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("B", 2),
+    cycles: 8
+  },
+  "0x51": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("C", 2),
+    cycles: 8
+  },
+  "0x52": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("D", 2),
+    cycles: 8
+  },
+  "0x53": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("E", 2),
+    cycles: 8
+  },
+  "0x54": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("H", 2),
+    cycles: 8
+  },
+  "0x55": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("L", 2),
+    cycles: 8
+  },
+  "0x56": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_MEM(2),
+    cycles: 16
+  },
+  "0x57": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("A", 2),
+    cycles: 8
+  },
+
+  "0x58": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("B", 3),
+    cycles: 8
+  },
+  "0x59": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("C", 3),
+    cycles: 8
+  },
+  "0x5A": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("D", 3),
+    cycles: 8
+  },
+  "0x5B": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("E", 3),
+    cycles: 8
+  },
+  "0x5C": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("H", 3),
+    cycles: 8
+  },
+  "0x5D": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("L", 3),
+    cycles: 8
+  },
+  "0x5E": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_MEM(3),
+    cycles: 16
+  },
+  "0x5F": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("A", 3),
+    cycles: 8
+  },
+
+  "0x60": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("B", 4),
+    cycles: 8
+  },
+  "0x61": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("C", 4),
+    cycles: 8
+  },
+  "0x62": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("D", 4),
+    cycles: 8
+  },
+  "0x63": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("E", 4),
+    cycles: 8
+  },
+  "0x64": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("H", 4),
+    cycles: 8
+  },
+  "0x65": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("L", 4),
+    cycles: 8
+  },
+  "0x66": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_MEM(4),
+    cycles: 16
+  },
+  "0x67": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("A", 4),
+    cycles: 8
+  },
+
+  "0x68": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("B", 5),
+    cycles: 8
+  },
+  "0x69": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("C", 5),
+    cycles: 8
+  },
+  "0x6A": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("D", 5),
+    cycles: 8
+  },
+  "0x6B": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("E", 5),
+    cycles: 8
+  },
+  "0x6C": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("H", 5),
+    cycles: 8
+  },
+  "0x6D": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("L", 5),
+    cycles: 8
+  },
+  "0x6E": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_MEM(5),
+    cycles: 16
+  },
+  "0x6F": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("A", 5),
+    cycles: 8
+  },
+
+  "0x70": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("B", 6),
+    cycles: 8
+  },
+  "0x71": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("C", 6),
+    cycles: 8
+  },
+  "0x72": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("D", 6),
+    cycles: 8
+  },
+  "0x73": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("E", 6),
+    cycles: 8
+  },
+  "0x74": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("H", 6),
+    cycles: 8
+  },
+  "0x75": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("L", 6),
+    cycles: 8
+  },
+  "0x76": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_MEM(6),
+    cycles: 16
+  },
+  "0x77": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("A", 6),
+    cycles: 8
+  },
+
+  "0x78": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("B", 7),
+    cycles: 8
+  },
+  "0x79": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("C", 7),
+    cycles: 8
+  },
+  "0x7A": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("D", 7),
+    cycles: 8
+  },
+  "0x7B": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("E", 7),
+    cycles: 8
+  },
+  "0x7C": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("H", 7),
+    cycles: 8
+  },
+  "0x7D": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("L", 7),
+    cycles: 8
+  },
+  "0x7E": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_MEM(7),
+    cycles: 16
+  },
+  "0x7F": {
+    fn: (cpu: Cpu) => cpu.BIT_TEST_REG("A", 7),
+    cycles: 8
+  }
+};
 
 export const EXT_OpcodeTable: IOpcodeTable = {
   ...EXT_SWAP_n,
-}
+  ...EXT_BIT_TEST
+};

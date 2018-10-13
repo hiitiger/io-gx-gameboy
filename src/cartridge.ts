@@ -1,3 +1,5 @@
+import { RamSize } from "./specs.js";
+
 export enum CartridgeType {
   ROM = 0x00,
   ROM_MBC1 = 0x01,
@@ -30,8 +32,17 @@ export function getCatridgeType(data: Uint8Array) {
 export class Cartridge {
   public data: Uint8Array;
   public type: string;
+
   constructor(data: Uint8Array) {
     this.data = data;
     this.type = getCatridgeType(data);
+  }
+
+  public readByte(addr: number) {
+    if (addr < 0 || addr > RamSize) {
+      throw new Error("out of bounds");
+    }
+
+    return this.data[addr];
   }
 }

@@ -1,9 +1,9 @@
-import { RamSize } from "./specs.js";
+import { RamSize, BiosSize } from "./specs.js";
 import { Cartridge } from "./cartridge.js";
 
 export class Memory {
+  private inboot: boolean = true;
   data: Uint8Array = new Uint8Array(RamSize);
-
   rom: Cartridge;
 
   public load(addr: number, data: Uint8Array) {
@@ -15,11 +15,19 @@ export class Memory {
   }
 
   public readByte(addr: number) {
-    if (addr < 0 || addr >= RamSize) {
+    if (addr < 0 || addr > RamSize) {
       throw new Error("out of bounds");
     }
 
-    return this.data[addr];
+    if (this.inboot) {
+      if (addr < BiosSize) {
+        return this.data[addr];
+      } else {
+        this.inboot = false;
+      }
+    }
+
+    return this.rom.readByte(addr);
   }
 
   public readWord(addr: number) {
@@ -28,7 +36,7 @@ export class Memory {
     return (high << 8) + low;
   }
 
-  public writeByte( addr: number, value: number,) {}
+  public writeByte(addr: number, value: number) {}
 
-  public writeWord( addr: number, value: number,) {}
+  public writeWord(addr: number, value: number) {}
 }

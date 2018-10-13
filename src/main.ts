@@ -6,7 +6,6 @@ import { Cpu } from "./cpu.js";
 
 function run(cpu: Cpu) {
   cpu.tick();
-  cpu.printReg();
 
   setTimeout(() => run(cpu), 16);
 }
@@ -24,7 +23,7 @@ async function main() {
   // logBuffer(bios);
   // logBuffer(rombin);
 
-  const cpu = new Cpu(mem, rom);
+  const cpu = new Cpu(mem);
   cpu.init();
   cpu.printReg();
   run(cpu);

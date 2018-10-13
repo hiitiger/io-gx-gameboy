@@ -12,15 +12,15 @@ function trimRegAddr(s: string) {
 
 export class Cpu {
   private mem: Memory;
-  private rom: Cartridge;
 
   private registers: Registers;
 
-  constructor(mem: Memory, rom: Cartridge) {
+  private cycles: number;
+
+  constructor(mem: Memory) {
     this.mem = mem;
-    this.rom = rom;
     this.registers = new Registers();
-    this.registers.reset();
+    this.reset();
   }
 
   public printReg() {
@@ -44,11 +44,20 @@ export class Cpu {
   }
 
   public reset() {
+    this.cycles = 0;
     this.registers.reset();
   }
 
   public tick() {
-    this.excute_next_opcode();
+    const cyclesPerFrame = 70224;
+    while (this.cycles < cyclesPerFrame) {
+      this.excute_next_opcode();
+      // this.printReg();
+
+      logger.log(`this.cycles ${this.cycles}`)
+    }
+
+    this.cycles -= cyclesPerFrame;
   }
 
   public excute_next_opcode() {
@@ -56,6 +65,7 @@ export class Cpu {
     logger.log(`opcode: ${opcodeHex(opcode)}`);
 
     const instruction = OpcodeTable[opcodeHex(opcode)];
+    this.cycles += instruction.cycles;
 
     const cpu = this;
     instruction.fn(cpu);
@@ -66,6 +76,7 @@ export class Cpu {
     logger.log(`opcode: ${opcodeHex(opcode)}`);
 
     const instruction = EXT_OpcodeTable[opcodeHex(opcode)];
+    this.cycles += instruction.cycles;
 
     const cpu = this;
     instruction.fn(cpu);
@@ -82,6 +93,26 @@ export class Cpu {
         this.setFlag("Z");
       }
     }
+  }
+
+  public BIT_TEST(v: number, bit: number) {
+    v = v & (1 << bit);
+    if (v === 0) {
+      this.setFlag("Z");
+    } else {
+      this.resetFlag("Z");
+    }
+
+    this.resetFlag("N");
+    this.resetFlag("H");
+  }
+
+  public BIT_TEST_REG(reg: string, bit: number) {
+    this.BIT_TEST(this.readReg8bit(reg), bit);
+  }
+
+  public BIT_TEST_MEM(bit: number) {
+    this.BIT_TEST(this.mem.readByte(this.readReg16bit("HL")), bit);
   }
 
   public LD_nn_n(reg: string) {
@@ -146,12 +177,18 @@ export class Cpu {
   }
 
   public LDD_HL_A() {
-    this.mem.writeByte(
-      this.mem.readWord(this.readReg16bit("HL")),
-      this.readReg8bit("A")
-    );
+    this.mem.writeByte(this.readReg16bit("HL"), this.readReg8bit("A"));
 
     this.writeReg16bit("HL", this.readReg16bit("HL") - 1);
+  }
+
+  public JR_NZ_e() {
+    if (this.readFlag("Z") === 0) {
+      const add = (this.cpu_mem8bitRead() << 24) >> 24;
+      this.registers.PC += add;
+    } else {
+      this.registers.PC = this.registers.PC + 1;
+    }
   }
 
   public cpu_mem8bitRead() {
@@ -225,7 +262,7 @@ export class Cpu {
     reg8bitWrite[name](val);
   }
 
-  public readReg8bit(name: string) {
+  public readReg8bit(name: string): number {
     const reg8bitRead = {
       A: () => this.registers.A,
       B: () => this.registers.B,
