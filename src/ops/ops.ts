@@ -8,6 +8,9 @@ export const buildOpMap = (ops: any[]): IOpcodeDescription[] => {
   };
 
   //INC r
+  ops[0x3c] = {
+    fn: (cpu: Cpu) => cpu.INC_r("A")
+  };
   ops[0x04] = {
     fn: (cpu: Cpu) => cpu.INC_r("B")
   };
@@ -29,9 +32,7 @@ export const buildOpMap = (ops: any[]): IOpcodeDescription[] => {
   ops[0x34] = {
     fn: (cpu: Cpu) => cpu.INC_HL_()
   };
-  ops[0x3c] = {
-    fn: (cpu: Cpu) => cpu.INC_r("A")
-  };
+
 
   //DEC r
   ops[0x3d] = {
@@ -355,7 +356,6 @@ export const buildOpMap = (ops: any[]): IOpcodeDescription[] => {
     fn: (cpu: Cpu) => cpu.LD_A_0xFF00n_()
   };
 
-  
   //LD rr, nn
   ops[0x01] = {
     fn: (cpu: Cpu) => cpu.LD_BC_nn()
@@ -380,36 +380,36 @@ export const buildOpMap = (ops: any[]): IOpcodeDescription[] => {
     fn: (cpu: Cpu) => cpu.LDHL_SP_n()
   };
 
-  //LD (nn), SP 
+  //LD (nn), SP
   ops[0x08] = {
     fn: (cpu: Cpu) => cpu.LD_nn_SP()
   };
 
   //PUSH nn
-  ops[0xF5] = {
+  ops[0xf5] = {
     fn: (cpu: Cpu) => cpu.PUSH_rr("AF")
   };
-  ops[0xC5] = {
+  ops[0xc5] = {
     fn: (cpu: Cpu) => cpu.PUSH_rr("BC")
   };
-  ops[0xD5] = {
+  ops[0xd5] = {
     fn: (cpu: Cpu) => cpu.PUSH_rr("DE")
   };
-  ops[0xE5] = {
+  ops[0xe5] = {
     fn: (cpu: Cpu) => cpu.PUSH_rr("HL")
   };
 
   //POP nn
-  ops[0xF1] = {
+  ops[0xf1] = {
     fn: (cpu: Cpu) => cpu.POP_rr("AF")
   };
-  ops[0xC1] = {
+  ops[0xc1] = {
     fn: (cpu: Cpu) => cpu.POP_rr("BC")
   };
-  ops[0xD1] = {
+  ops[0xd1] = {
     fn: (cpu: Cpu) => cpu.POP_rr("DE")
   };
-  ops[0xE1] = {
+  ops[0xe1] = {
     fn: (cpu: Cpu) => cpu.POP_rr("HL")
   };
 
@@ -442,6 +442,210 @@ export const buildOpMap = (ops: any[]): IOpcodeDescription[] => {
     fn: (cpu: Cpu) => cpu.ADD_A_n()
   };
 
+  //ADC A, n
+  ops[0x8f] = {
+    fn: (cpu: Cpu) => cpu.ADC_A_r("A")
+  };
+  ops[0x88] = {
+    fn: (cpu: Cpu) => cpu.ADC_A_r("B")
+  };
+  ops[0x89] = {
+    fn: (cpu: Cpu) => cpu.ADC_A_r("C")
+  };
+  ops[0x8a] = {
+    fn: (cpu: Cpu) => cpu.ADC_A_r("D")
+  };
+  ops[0x8b] = {
+    fn: (cpu: Cpu) => cpu.ADC_A_r("E")
+  };
+  ops[0x8c] = {
+    fn: (cpu: Cpu) => cpu.ADC_A_r("H")
+  };
+  ops[0x8d] = {
+    fn: (cpu: Cpu) => cpu.ADC_A_r("L")
+  };
+  ops[0x8e] = {
+    fn: (cpu: Cpu) => cpu.ADC_A_HL_()
+  };
+  ops[0xce] = {
+    fn: (cpu: Cpu) => cpu.ADC_A_n()
+  };
+
+  //SUB n
+  ops[0x97] = {
+    fn: (cpu: Cpu) => cpu.SUB_A_r("A")
+  };
+  ops[0x90] = {
+    fn: (cpu: Cpu) => cpu.SUB_A_r("B")
+  };
+  ops[0x91] = {
+    fn: (cpu: Cpu) => cpu.SUB_A_r("C")
+  };
+  ops[0x92] = {
+    fn: (cpu: Cpu) => cpu.SUB_A_r("D")
+  };
+  ops[0x93] = {
+    fn: (cpu: Cpu) => cpu.SUB_A_r("E")
+  };
+  ops[0x94] = {
+    fn: (cpu: Cpu) => cpu.SUB_A_r("H")
+  };
+  ops[0x95] = {
+    fn: (cpu: Cpu) => cpu.SUB_A_r("L")
+  };
+  ops[0x96] = {
+    fn: (cpu: Cpu) => cpu.SUB_A_HL_()
+  };
+  ops[0xd6] = {
+    fn: (cpu: Cpu) => cpu.SUB_A_n()
+  };
+
+  //SBC A, n
+  ops[0x9f] = {
+    fn: (cpu: Cpu) => cpu.SBC_A_r("A")
+  };
+  ops[0x98] = {
+    fn: (cpu: Cpu) => cpu.SBC_A_r("B")
+  };
+  ops[0x99] = {
+    fn: (cpu: Cpu) => cpu.SBC_A_r("C")
+  };
+  ops[0x9a] = {
+    fn: (cpu: Cpu) => cpu.SBC_A_r("D")
+  };
+  ops[0x9b] = {
+    fn: (cpu: Cpu) => cpu.SBC_A_r("E")
+  };
+  ops[0x9c] = {
+    fn: (cpu: Cpu) => cpu.SBC_A_r("H")
+  };
+  ops[0x9d] = {
+    fn: (cpu: Cpu) => cpu.SBC_A_r("L")
+  };
+  ops[0x9e] = {
+    fn: (cpu: Cpu) => cpu.SBC_A_HL_()
+  };
+  ops[0xde] = {
+    fn: (cpu: Cpu) => cpu.SBC_A_n()
+  };
+
+  //AND n
+  ops[0xa7] = {
+    fn: (cpu: Cpu) => cpu.AND_A_r("A")
+  };
+  ops[0xa0] = {
+    fn: (cpu: Cpu) => cpu.AND_A_r("B")
+  };
+  ops[0xa1] = {
+    fn: (cpu: Cpu) => cpu.AND_A_r("C")
+  };
+  ops[0xa2] = {
+    fn: (cpu: Cpu) => cpu.AND_A_r("D")
+  };
+  ops[0xa3] = {
+    fn: (cpu: Cpu) => cpu.AND_A_r("E")
+  };
+  ops[0xa4] = {
+    fn: (cpu: Cpu) => cpu.AND_A_r("H")
+  };
+  ops[0xa5] = {
+    fn: (cpu: Cpu) => cpu.AND_A_r("L")
+  };
+  ops[0xa6] = {
+    fn: (cpu: Cpu) => cpu.AND_A_HL_()
+  };
+  ops[0xe6] = {
+    fn: (cpu: Cpu) => cpu.AND_A_n()
+  };
+
+  //OR n
+  ops[0xb7] = {
+    fn: (cpu: Cpu) => cpu.OR_A_r("A")
+  };
+  ops[0xb0] = {
+    fn: (cpu: Cpu) => cpu.OR_A_r("B")
+  };
+  ops[0xb1] = {
+    fn: (cpu: Cpu) => cpu.OR_A_r("C")
+  };
+  ops[0xb2] = {
+    fn: (cpu: Cpu) => cpu.OR_A_r("D")
+  };
+  ops[0xb3] = {
+    fn: (cpu: Cpu) => cpu.OR_A_r("E")
+  };
+  ops[0xb4] = {
+    fn: (cpu: Cpu) => cpu.OR_A_r("H")
+  };
+  ops[0xb5] = {
+    fn: (cpu: Cpu) => cpu.OR_A_r("L")
+  };
+  ops[0xb6] = {
+    fn: (cpu: Cpu) => cpu.OR_A_HL_()
+  };
+  ops[0xf6] = {
+    fn: (cpu: Cpu) => cpu.OR_A_n()
+  };
+
+  //XOR n
+  ops[0xaf] = {
+    fn: (cpu: Cpu) => cpu.XOR_A_r("A")
+  };
+  ops[0xa8] = {
+    fn: (cpu: Cpu) => cpu.XOR_A_r("B")
+  };
+  ops[0xa9] = {
+    fn: (cpu: Cpu) => cpu.XOR_A_r("C")
+  };
+  ops[0xaa] = {
+    fn: (cpu: Cpu) => cpu.XOR_A_r("D")
+  };
+  ops[0xab] = {
+    fn: (cpu: Cpu) => cpu.XOR_A_r("E")
+  };
+  ops[0xac] = {
+    fn: (cpu: Cpu) => cpu.XOR_A_r("H")
+  };
+  ops[0xad] = {
+    fn: (cpu: Cpu) => cpu.XOR_A_r("L")
+  };
+  ops[0xae] = {
+    fn: (cpu: Cpu) => cpu.XOR_A_HL_()
+  };
+  ops[0xee] = {
+    fn: (cpu: Cpu) => cpu.XOR_A_n()
+  };
+
+  //CP n
+  ops[0xbf] = {
+    fn: (cpu: Cpu) => cpu.CP_r("A")
+  };
+  ops[0xb8] = {
+    fn: (cpu: Cpu) => cpu.CP_r("B")
+  };
+  ops[0xb9] = {
+    fn: (cpu: Cpu) => cpu.CP_r("C")
+  };
+  ops[0xba] = {
+    fn: (cpu: Cpu) => cpu.CP_r("D")
+  };
+  ops[0xbb] = {
+    fn: (cpu: Cpu) => cpu.CP_r("E")
+  };
+  ops[0xbc] = {
+    fn: (cpu: Cpu) => cpu.CP_r("H")
+  };
+  ops[0xbd] = {
+    fn: (cpu: Cpu) => cpu.CP_r("L")
+  };
+  ops[0xbe] = {
+    fn: (cpu: Cpu) => cpu.CP_HL_()
+  };
+  ops[0xfe] = {
+    fn: (cpu: Cpu) => cpu.CP_n()
+  };
+
+  //
   ops[0x36] = {
     fn: (cpu: Cpu) => cpu.LD_HL_n()
   };

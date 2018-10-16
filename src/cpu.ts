@@ -99,7 +99,7 @@ export class Cpu {
 
     this.registers.NF = false;
     this.registers.ZF = value === 0;
-    this.registers.HF = (value & 0xf) === 0;
+    this.registers.HF = (value & 0x0f) === 0;
 
     this.cycles += 4;
   }
@@ -120,7 +120,7 @@ export class Cpu {
 
     this.registers.NF = true;
     this.registers.ZF = value === 0;
-    this.registers.HF = (value & 0xf) === 0xf;
+    this.registers.HF = (value & 0x0f) === 0x0f;
 
     this.cycles += 4;
   }
@@ -131,7 +131,7 @@ export class Cpu {
 
     this.registers.NF = true;
     this.registers.ZF = value === 0;
-    this.registers.HF = (value & 0xf) === 0;
+    this.registers.HF = (value & 0x0f) === 0x0f;
     this.cycles += 12;
   }
 
@@ -147,16 +147,18 @@ export class Cpu {
   }
 
   public LDHL_SP_n() {
-    let value = (this.readMemory8bit(this.registers.PC) << 24) >> 24;
+    const addValue = (this.readMemory8bit(this.registers.PC) << 24) >> 24;
     this.registers.PC = (this.registers.PC + 1) & 0xffff;
-    this.registers.HL = (this.registers.SP + value) & 0xffff;
 
-    value = this.registers.SP ^ value ^ this.registers.HL;
+    const value = this.registers.SP + addValue;
+    this.registers.HL = value & 0xffff;
 
     this.registers.ZF = false;
     this.registers.NF = false;
-    this.registers.CF = (value & 0x100) === 0x100;
-    this.registers.HF = (value & 0x10) === 0x10;
+    this.registers.CF =
+      (((this.registers.SP & 0xff) + (addValue & 0xff)) & 0x100) !== 0;
+    this.registers.HF =
+      (((this.registers.SP & 0x0f) + (addValue & 0x0f)) & 0x10) !== 0;
     this.cycles += 12;
   }
 
@@ -188,7 +190,7 @@ export class Cpu {
   public ADD_A_r(r: string) {
     const oldValue = this.registers.A;
     const addValue = this.readReg8bit(r);
-    const value = this.registers.A + addValue;
+    const value = oldValue + addValue;
     this.registers.A = value & 0xff;
     this.registers.ZF = this.registers.A === 0;
     this.registers.NF = false;
@@ -199,7 +201,7 @@ export class Cpu {
   public ADD_A_HL_() {
     const oldValue = this.registers.A;
     const addValue = this.readMemory8bit(this.registers.HL);
-    const value = this.registers.A + addValue;
+    const value = oldValue + addValue;
     this.registers.A = value & 0xff;
     this.registers.ZF = this.registers.A === 0;
     this.registers.NF = false;
@@ -212,7 +214,7 @@ export class Cpu {
     const oldValue = this.registers.A;
     const addValue = this.readMemory8bit(this.registers.PC);
     this.registers.PC = (this.registers.PC + 1) & 0xffff;
-    const value = this.registers.A + addValue;
+    const value = oldValue + addValue;
     this.registers.A = value & 0xff;
     this.registers.ZF = this.registers.A === 0;
     this.registers.NF = false;
@@ -220,6 +222,278 @@ export class Cpu {
     this.registers.CF = value > 0xff;
 
     this.cycles += 8;
+  }
+
+  public ADC_A_r(r: string) {
+    const carry = this.readFlag("C") ? 1 : 0;
+    const oldValue = this.registers.A;
+    const addValue = this.readReg8bit(r);
+    const value = oldValue + addValue + carry;
+    this.registers.A = value & 0xff;
+
+    this.registers.ZF = this.registers.A === 0;
+    this.registers.NF = false;
+    this.registers.HF = (oldValue & 0xf) + (addValue & 0xf) + carry > 0xf;
+    this.registers.CF = value > 0xff;
+
+    this.cycles += 4;
+  }
+
+  public ADC_A_HL_() {
+    const carry = this.readFlag("C") ? 1 : 0;
+    const oldValue = this.registers.A;
+    const addValue = this.readMemory8bit(this.registers.HL);
+    const value = oldValue + addValue + carry;
+    this.registers.A = value & 0xff;
+
+    this.registers.ZF = this.registers.A === 0;
+    this.registers.NF = false;
+    this.registers.HF = (oldValue & 0xf) + (addValue & 0xf) + carry > 0xf;
+    this.registers.CF = value > 0xff;
+
+    this.cycles += 8;
+  }
+
+  public ADC_A_n() {
+    const carry = this.readFlag("C") ? 1 : 0;
+    const oldValue = this.registers.A;
+    const addValue = this.readMemory8bit(this.registers.PC);
+    this.registers.PC = (this.registers.PC + 1) & 0xffff;
+
+    const value = oldValue + addValue + carry;
+    this.registers.A = value & 0xff;
+
+    this.registers.ZF = this.registers.A === 0;
+    this.registers.NF = false;
+    this.registers.HF = (oldValue & 0xf) + (addValue & 0xf) + carry > 0xf;
+    this.registers.CF = value > 0xff;
+
+    this.cycles += 8;
+  }
+
+  public SUB_A_r(r: string) {
+    const oldValue = this.registers.A;
+    const subValue = this.readReg8bit(r);
+    const value = oldValue - subValue;
+
+    this.registers.A = value & 0xff;
+    this.registers.ZF = this.registers.A === 0;
+    this.registers.NF = true;
+    this.registers.HF = (oldValue & 0xf) < (subValue & 0xf);
+    this.registers.CF = value < 0;
+
+    this.cycles += 4;
+  }
+
+  public SUB_A_HL_() {
+    const oldValue = this.registers.A;
+    const subValue = this.readMemory8bit(this.registers.HL);
+    const value = oldValue - subValue;
+
+    this.registers.A = value & 0xff;
+    this.registers.ZF = this.registers.A === 0;
+    this.registers.NF = true;
+    this.registers.HF = (oldValue & 0xf) < (subValue & 0xf);
+    this.registers.CF = value < 0;
+
+    this.cycles += 8;
+  }
+
+  public SUB_A_n() {
+    const oldValue = this.registers.A;
+    const subValue = this.readMemory8bit(this.registers.PC);
+    this.registers.PC = (this.registers.PC + 1) & 0xffff;
+
+    const value = oldValue - subValue;
+
+    this.registers.A = value & 0xff;
+    this.registers.ZF = this.registers.A === 0;
+    this.registers.NF = true;
+    this.registers.HF = (oldValue & 0xf) < (subValue & 0xf);
+    this.registers.CF = value < 0;
+
+    this.cycles += 8;
+  }
+
+  public SBC_A_r(r: string) {
+    const oldValue = this.registers.A;
+    const subValue = this.readReg8bit(r);
+    const carry = this.registers.CF ? 1 : 0;
+    const value = oldValue - subValue - carry;
+
+    this.registers.A = value & 0xff;
+    this.registers.ZF = this.registers.A === 0;
+    this.registers.NF = true;
+    this.registers.HF = (oldValue & 0xf) - (subValue & 0xf) - carry < 0;
+    this.registers.CF = value < 0;
+
+    this.cycles += 4;
+  }
+
+  public SBC_A_HL_() {
+    const oldValue = this.registers.A;
+    const subValue = this.readMemory8bit(this.registers.HL);
+    const carry = this.registers.CF ? 1 : 0;
+    const value = oldValue - subValue - carry;
+
+    this.registers.A = value & 0xff;
+    this.registers.ZF = this.registers.A === 0;
+    this.registers.NF = true;
+    this.registers.HF = (oldValue & 0xf) - (subValue & 0xf) - carry < 0;
+    this.registers.CF = value < 0;
+
+    this.cycles += 8;
+  }
+
+  public SBC_A_n() {
+    const oldValue = this.registers.A;
+    const subValue = this.readMemory8bit(this.registers.PC);
+    this.registers.PC = (this.registers.PC + 1) & 0xffff;
+
+    const carry = this.registers.CF ? 1 : 0;
+    const value = oldValue - subValue - carry;
+
+    this.registers.A = value & 0xff;
+    this.registers.ZF = this.registers.A === 0;
+    this.registers.NF = true;
+    this.registers.HF = (oldValue & 0xf) - (subValue & 0xf) - carry < 0;
+    this.registers.CF = value < 0;
+
+    this.cycles += 8;
+  }
+
+  public AND_A_r(r: string) {
+    this.registers.A = this.registers.A & this.readReg8bit(r);
+
+    this.registers.ZF = this.registers.A === 0;
+    this.registers.NF = false;
+    this.registers.HF = true;
+    this.registers.CF = false;
+    this.cycles += 4;
+  }
+
+  public AND_A_HL_() {
+    this.registers.A =
+      this.registers.A & this.readMemory8bit(this.registers.HL);
+
+    this.registers.ZF = this.registers.A === 0;
+    this.registers.NF = false;
+    this.registers.HF = true;
+    this.registers.CF = false;
+    this.cycles += 4;
+  }
+
+  public AND_A_n() {
+    this.registers.A =
+      this.registers.A & this.readMemory8bit(this.registers.PC);
+    this.registers.PC = (this.registers.PC + 1) & 0xffff;
+
+    this.registers.ZF = this.registers.A === 0;
+    this.registers.NF = false;
+    this.registers.HF = true;
+    this.registers.CF = false;
+    this.cycles += 4;
+  }
+
+  public OR_A_r(r: string) {
+    this.registers.A = this.registers.A | this.readReg8bit(r);
+
+    this.registers.ZF = this.registers.A === 0;
+    this.registers.NF = false;
+    this.registers.HF = false;
+    this.registers.CF = false;
+    this.cycles += 4;
+  }
+
+  public OR_A_HL_() {
+    this.registers.A =
+      this.registers.A | this.readMemory8bit(this.registers.HL);
+
+    this.registers.ZF = this.registers.A === 0;
+    this.registers.NF = false;
+    this.registers.HF = false;
+    this.registers.CF = false;
+    this.cycles += 8;
+  }
+
+  public OR_A_n() {
+    this.registers.A =
+      this.registers.A | this.readMemory8bit(this.registers.PC);
+    this.registers.PC = (this.registers.PC + 1) & 0xffff;
+
+    this.registers.ZF = this.registers.A === 0;
+    this.registers.NF = false;
+    this.registers.HF = false;
+    this.registers.CF = false;
+    this.cycles += 8;
+  }
+
+  public XOR_A_r(r: string) {
+    this.registers.A = this.registers.A ^ this.readReg8bit(r);
+
+    this.registers.ZF = this.registers.A === 0;
+    this.registers.NF = false;
+    this.registers.HF = false;
+    this.registers.CF = false;
+    this.cycles += 4;
+  }
+
+  public XOR_A_HL_() {
+    this.registers.A =
+      this.registers.A ^ this.readMemory8bit(this.registers.HL);
+
+    this.registers.ZF = this.registers.A === 0;
+    this.registers.NF = false;
+    this.registers.HF = false;
+    this.registers.CF = false;
+    this.cycles += 8;
+  }
+
+  public XOR_A_n() {
+    this.registers.A =
+      this.registers.A ^ this.readMemory8bit(this.registers.PC);
+    this.registers.PC = (this.registers.PC + 1) & 0xffff;
+
+    this.registers.ZF = this.registers.A === 0;
+    this.registers.NF = false;
+    this.registers.HF = false;
+    this.registers.CF = false;
+    this.cycles += 8;
+  }
+
+  public CP_r(r: string) {
+    const subValue = this.readReg8bit(r);
+    const value = this.registers.A - subValue;
+
+    this.registers.ZF = value === 0;
+    this.registers.NF = false;
+    this.registers.HF = (this.registers.A & 0x0f) < (subValue & 0x0f);
+    this.registers.CF = value < 0;
+    this.cycles += 4;
+  }
+
+  public CP_HL_() {
+    const subValue = this.readMemory8bit(this.registers.HL);
+    const value = this.registers.A - subValue;
+
+    this.registers.ZF = value === 0;
+    this.registers.NF = false;
+    this.registers.HF = (this.registers.A & 0x0f) < (subValue & 0x0f);
+    this.registers.CF = value < 0;
+    this.cycles += 8;
+  }
+
+  public CP_n() {
+    const subValue = this.readMemory8bit(this.registers.PC);
+    this.registers.PC = (this.registers.PC + 1) & 0xffff;
+
+    const value = this.registers.A - subValue;
+
+    this.registers.ZF = value === 0;
+    this.registers.NF = false;
+    this.registers.HF = (this.registers.A & 0x0f) < (subValue & 0x0f);
+    this.registers.CF = value < 0;
+    this.cycles += 4;
   }
 
   public LD_BC_nn() {
@@ -391,7 +665,6 @@ export class Cpu {
 
   public SWAP_HL_() {
     let value = this.readMemory8bit(this.registers.HL);
-    value = ((value & 0xf0) >> 4) | ((value & 0x0f) << 4);
     value = ((value & 0xf0) >> 4) | ((value & 0x0f) << 4);
     this.writeMemory8bit(this.registers.HL, value);
 
