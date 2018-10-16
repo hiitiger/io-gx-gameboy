@@ -95,7 +95,7 @@ export class Cpu {
 
   public INC_r(r: string) {
     const value = (this.readReg8bit(r) + 1) & 0xff;
-    this.writeReg8bit(r, value);
+    this.writeReg8bit(r, value & 0xff);
 
     this.registers.NF = false;
     this.registers.ZF = value === 0;
@@ -493,6 +493,82 @@ export class Cpu {
     this.registers.NF = false;
     this.registers.HF = (this.registers.A & 0x0f) < (subValue & 0x0f);
     this.registers.CF = value < 0;
+    this.cycles += 4;
+  }
+
+  public ADD_HL_rr(rr: string) {
+    const oldValue = this.registers.HL;
+    const addValue = this.readReg16bit(rr);
+    const value = oldValue + addValue;
+
+    this.registers.HL = value & 0xffff;
+    this.registers.NF = (oldValue & 0xfff) + (addValue & 0xfff) > 0xfff;
+    this.registers.CF = value > 0xffff;
+
+    this.cycles += 8;
+  }
+
+  public ADD_SP_n() {
+    const addValue = (this.readMemory8bit(this.registers.PC) << 24) >> 24;
+    this.registers.SP = (this.registers.SP + addValue) & 0xffff;
+
+    this.registers.ZF = false;
+    this.registers.NF = false;
+
+    this.registers.HF =
+      (((this.registers.SP & 0x0f) + (addValue & 0x0f)) & 0x10) !== 0;
+    this.registers.CF =
+      (((this.registers.SP & 0xff) + (addValue & 0xff)) & 0x100) !== 0;
+    this.cycles += 16;
+  }
+
+  public INC_rr(rr: string) {
+    const value = this.readReg16bit(rr) + 1;
+    this.writeReg16bit(rr, value & 0xffff);
+    this.cycles += 8;
+  }
+
+  public DEC_rr(rr: string) {
+    const value = this.readReg16bit(rr) - 1;
+    this.writeReg16bit(rr, value & 0xffff);
+    this.cycles += 8;
+  }
+
+  public DAA() {
+    let value = this.registers.A;
+    if (this.registers.NF) {
+      if (this.registers.HF || (this.registers.A & 0xf) > 9) {
+        value = value - 6;
+      }
+      if (this.registers.CF || this.registers.A > 0x99) {
+        value = value - 0x60;
+      }
+    } else {
+      if (this.registers.HF || (this.registers.A & 0xf) > 9) {
+        value = value + 6;
+      }
+      if (this.registers.CF || this.registers.A > 0x99) {
+        value = value + 0x60;
+      }
+    }
+
+    this.registers.A = value & 0xff;
+
+    this.registers.ZF = this.registers.A === 0;
+    this.registers.HF = false;
+
+    if ((value & 0x100) === 0x100) {
+      this.registers.CF = true;
+    }
+
+    this.cycles += 4;
+  }
+
+  public CPL() {
+    this.registers.A = this.registers.A ^ 0xff;
+    this.registers.NF = true;
+    this.registers.HF = true;
+
     this.cycles += 4;
   }
 

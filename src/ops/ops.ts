@@ -645,6 +645,64 @@ export const buildOpMap = (ops: any[]): IOpcodeDescription[] => {
     fn: (cpu: Cpu) => cpu.CP_n()
   };
 
+  //16bit 
+  //ADD HL, n
+  ops[0x09] = {
+    fn: (cpu: Cpu) => cpu.ADD_HL_rr("BC")
+  };
+  ops[0x19] = {
+    fn: (cpu: Cpu) => cpu.ADD_HL_rr("DE")
+  };
+  ops[0x29] = {
+    fn: (cpu: Cpu) => cpu.ADD_HL_rr("HL")
+  };
+  ops[0x39] = {
+    fn: (cpu: Cpu) => cpu.ADD_HL_rr("SP")
+  };
+
+  //ADD SP, n
+  ops[0xe8] = {
+    fn: (cpu: Cpu) => cpu.ADD_SP_n()
+  };
+
+  //INC rr
+  ops[0x03] = {
+    fn: (cpu: Cpu) => cpu.INC_rr("BC")
+  };
+  ops[0x13] = {
+    fn: (cpu: Cpu) => cpu.INC_rr("DE")
+  };
+  ops[0x23] = {
+    fn: (cpu: Cpu) => cpu.INC_rr("HL")
+  };
+  ops[0x33] = {
+    fn: (cpu: Cpu) => cpu.INC_rr("SP")
+  };
+
+  //DEC rr
+  ops[0x0B] = {
+    fn: (cpu: Cpu) => cpu.DEC_rr("BC")
+  };
+  ops[0x1B] = {
+    fn: (cpu: Cpu) => cpu.DEC_rr("DE")
+  };
+  ops[0x2B] = {
+    fn: (cpu: Cpu) => cpu.DEC_rr("HL")
+  };
+  ops[0x3B] = {
+    fn: (cpu: Cpu) => cpu.DEC_rr("SP")
+  };
+
+  //DAA 
+  ops[0x27] = {
+    fn: (cpu: Cpu) => cpu.DAA()
+  };
+
+  //CPL
+  ops[0x2f] = {
+    fn: (cpu: Cpu) => cpu.CPL()
+  };
+
   //
   ops[0x36] = {
     fn: (cpu: Cpu) => cpu.LD_HL_n()

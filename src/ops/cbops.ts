@@ -3,6 +3,8 @@ import { Cpu } from "../cpu.js";
 import { IOpcodeDescription } from "./iops.js";
 
 export const buildCBOpMap = (ops: any[]): IOpcodeDescription[] => {
+
+  //SWAP r
   ops[0x30] = {
     fn: (cpu: Cpu) => cpu.SWAP_r("B")
   };
