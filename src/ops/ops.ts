@@ -3,6 +3,7 @@ import { Cpu } from "../cpu.js";
 import { IOpcodeDescription } from "./iops.js";
 
 export const buildOpMap = (ops: any[]): IOpcodeDescription[] => {
+  //NOP
   ops[0x00] = {
     fn: (cpu: Cpu) => cpu.NOOP()
   };
@@ -32,7 +33,6 @@ export const buildOpMap = (ops: any[]): IOpcodeDescription[] => {
   ops[0x34] = {
     fn: (cpu: Cpu) => cpu.INC_HL_()
   };
-
 
   //DEC r
   ops[0x3d] = {
@@ -645,7 +645,7 @@ export const buildOpMap = (ops: any[]): IOpcodeDescription[] => {
     fn: (cpu: Cpu) => cpu.CP_n()
   };
 
-  //16bit 
+  //16bit
   //ADD HL, n
   ops[0x09] = {
     fn: (cpu: Cpu) => cpu.ADD_HL_rr("BC")
@@ -680,20 +680,20 @@ export const buildOpMap = (ops: any[]): IOpcodeDescription[] => {
   };
 
   //DEC rr
-  ops[0x0B] = {
+  ops[0x0b] = {
     fn: (cpu: Cpu) => cpu.DEC_rr("BC")
   };
-  ops[0x1B] = {
+  ops[0x1b] = {
     fn: (cpu: Cpu) => cpu.DEC_rr("DE")
   };
-  ops[0x2B] = {
+  ops[0x2b] = {
     fn: (cpu: Cpu) => cpu.DEC_rr("HL")
   };
-  ops[0x3B] = {
+  ops[0x3b] = {
     fn: (cpu: Cpu) => cpu.DEC_rr("SP")
   };
 
-  //DAA 
+  //DAA
   ops[0x27] = {
     fn: (cpu: Cpu) => cpu.DAA()
   };
@@ -702,6 +702,106 @@ export const buildOpMap = (ops: any[]): IOpcodeDescription[] => {
   ops[0x2f] = {
     fn: (cpu: Cpu) => cpu.CPL()
   };
+
+  //CCF
+  ops[0x3f] = {
+    fn: (cpu: Cpu) => cpu.CCF()
+  };
+
+  //SCF
+  ops[0x37] = {
+    fn: (cpu: Cpu) => cpu.SCF()
+  };
+
+  //HALT
+  ops[0x76] = {
+    fn: (cpu: Cpu) => cpu.HALT()
+  };
+
+  //STOP
+  ops[0x10] = {
+    fn: (cpu: Cpu) => cpu.STOP()
+  };
+
+  //DI
+  ops[0xf3] = {
+    fn: (cpu: Cpu) => cpu.DI()
+  };
+
+  //EI
+  ops[0xfb] = {
+    fn: (cpu: Cpu) => cpu.EI()
+  };
+
+  //RLCA
+  ops[0x07] = {
+    fn: (cpu: Cpu) => cpu.RLCA()
+  };
+
+  //RLA
+  ops[0x17] = {
+    fn: (cpu: Cpu) => cpu.RLA()
+  };
+
+  //RRCA
+  ops[0x0f] = {
+    fn: (cpu: Cpu) => cpu.RRCA()
+  };
+
+  //RRA
+  ops[0x1f] = {
+    fn: (cpu: Cpu) => cpu.RRA()
+  };
+
+  //JP nn
+  ops[0xc3] = {
+    fn: (cpu: Cpu) => cpu.JP_nn()
+  };
+
+  //JP cc
+  ops[0xc2] = {
+    fn: (cpu: Cpu) => cpu.JP_CC_nn("Z", false)
+  };
+  ops[0xca] = {
+    fn: (cpu: Cpu) => cpu.JP_CC_nn("Z", true)
+  };
+  ops[0xd2] = {
+    fn: (cpu: Cpu) => cpu.JP_CC_nn("C", false)
+  };
+  ops[0xda] = {
+    fn: (cpu: Cpu) => cpu.JP_CC_nn("C", true)
+  };
+
+  //JP HL
+  ops[0xe9] = {
+    fn: (cpu: Cpu) => cpu.JP_HL()
+  };
+
+  //JR n
+  ops[0x18] = {
+    fn: (cpu: Cpu) => cpu.JR_n()
+  };
+
+  //CALL nn
+  ops[0xcd] = {
+    fn: (cpu: Cpu) => cpu.CALL_nn()
+  };
+
+  //CALL CC bb
+  ops[0xc4] = {
+    fn: (cpu: Cpu) => cpu.CALL_CC_nn("Z", false)
+  };
+  ops[0xcc] = {
+    fn: (cpu: Cpu) => cpu.CALL_CC_nn("Z", true)
+  };
+  ops[0xd4] = {
+    fn: (cpu: Cpu) => cpu.CALL_CC_nn("C", false)
+  };
+  ops[0xdc] = {
+    fn: (cpu: Cpu) => cpu.CALL_CC_nn("C", true)
+  };
+
+  //RST n
 
   //
   ops[0x36] = {

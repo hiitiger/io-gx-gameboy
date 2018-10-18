@@ -90,7 +90,7 @@ export class Registers {
   }
 
   set A(val: number) {
-    this.rAF.high = val;
+    this.rAF.high = val & 0xff;
   }
 
   get F() {
@@ -106,7 +106,7 @@ export class Registers {
   }
 
   set B(val: number) {
-    this.rBC.high = val;
+    this.rBC.high = val & 0xff;
   }
 
   get C() {
@@ -114,7 +114,7 @@ export class Registers {
   }
 
   set C(val: number) {
-    this.rBC.low = val;
+    this.rBC.low = val & 0xff;
   }
 
   get D() {
@@ -122,7 +122,7 @@ export class Registers {
   }
 
   set D(val: number) {
-    this.rDE.high = val;
+    this.rDE.high = val & 0xff;
   }
 
   get E() {
@@ -130,7 +130,7 @@ export class Registers {
   }
 
   set E(val: number) {
-    this.rDE.low = val;
+    this.rDE.low = val & 0xff;
   }
 
   get H() {
@@ -138,7 +138,7 @@ export class Registers {
   }
 
   set H(val: number) {
-    this.rHL.high = val;
+    this.rHL.high = val & 0xff;
   }
 
   get L() {
@@ -146,7 +146,7 @@ export class Registers {
   }
 
   set L(val: number) {
-    this.rHL.low = val;
+    this.rHL.low = val & 0xff;
   }
 
   get ZF() {

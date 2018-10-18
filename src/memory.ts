@@ -1,5 +1,6 @@
 import { RamSize, BiosSize } from "./specs.js";
 import { Cartridge } from "./cartridge.js";
+import * as logger from "./logger.js";
 
 export class Memory {
   private inboot: boolean = true;
@@ -23,6 +24,7 @@ export class Memory {
       if (addr < BiosSize) {
         return this.data[addr];
       } else {
+        logger.info("boot finished")
         this.inboot = false;
       }
     }
@@ -36,9 +38,7 @@ export class Memory {
     return (high << 8) + low;
   }
 
-  public writeByte(addr: number, value: number) {
-  
-  }
+  public writeByte(addr: number, value: number) {}
 
   public writeWord(addr: number, value: number) {
     this.writeByte(addr, value & 0xff);
