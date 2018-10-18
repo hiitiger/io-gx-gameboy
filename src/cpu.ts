@@ -65,10 +65,6 @@ export class Cpu {
     while (this.cycles < cyclesPerFrame) {
       this.excute_next_opcode();
       // this.printReg();
-
-      if (this.registers.PC > 256) {
-        debugger;
-      }
       logger.debug(`this.cycles ${this.cycles}`);
     }
 
@@ -78,6 +74,10 @@ export class Cpu {
   public excute_next_opcode() {
     const opcode = this.cpu_mem8bitRead();
     logger.debug(`PC:${this.registers.PC}, opcode: ${opcodeHex(opcode)}`);
+
+    if (opcode ===  0x1a) {
+      debugger;
+    }
 
     if (opcode === 0xcb) {
       this.excute_ext_opcode();

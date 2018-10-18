@@ -25,6 +25,7 @@ export class Memory {
         return this.data[addr];
       } else {
         logger.info("boot finished")
+        debugger
         this.inboot = false;
       }
     }
