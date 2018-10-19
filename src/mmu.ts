@@ -1,14 +1,21 @@
 import { RamSize, BiosSize } from "./specs.js";
 import { Cartridge } from "./cartridge.js";
 import * as logger from "./logger.js";
+import { Gpu } from "./gpu.js";
 
-export class Memory {
+export class MMU {
   private inboot: boolean = true;
-  data: Uint8Array = new Uint8Array(RamSize);
+  bios: Uint8Array;
+  ram: Uint8Array = new Uint8Array(RamSize);
   rom: Cartridge;
+  gpu: Gpu;
 
-  public load(addr: number, data: Uint8Array) {
-    this.data.set(data, addr);
+  public loadBios(data: Uint8Array) {
+    this.bios = data;
+  }
+
+  public loadGpu(gpu: Gpu) {
+    this.gpu = gpu;
   }
 
   public loadRom(rom: Cartridge) {
@@ -22,15 +29,63 @@ export class Memory {
 
     if (this.inboot) {
       if (addr < BiosSize) {
-        return this.data[addr];
+        return this.bios[addr];
       } else {
-        logger.info("boot finished")
-        debugger
+        logger.info("boot finished");
+        debugger;
         this.inboot = false;
       }
     }
 
-    return this.rom.readByte(addr);
+    //Cartridge
+    if (addr >= 0x0000 && addr <= 0x7fff) {
+      return this.rom.readByte(addr);
+    }
+    //Cartridge
+    else if (addr >= 0xa000 && addr <= 0xbfff) {
+      return this.rom.readByte(addr);
+    }
+    //MMU ram
+    else if (addr >= 0xc000 && addr <= 0xdfff) {
+      return this.ram[addr];
+    }
+    //MMU ram mirror
+    else if (addr >= 0xe000 && addr <= 0xfdff) {
+      return this.ram[addr];
+    }
+    //GPU vram
+    else if (addr >= 0x8000 && addr <= 0xbfff) {
+      return this.gpu.readByte(addr);
+    }
+    //GPU sprite attribute table
+    else if (addr >= 0xfe00 && addr <= 0xfe9f) {
+      return this.gpu.readByte(addr);
+    }
+    //MMU
+    else if (addr >= 0xfea0 && addr <= 0xfeff) {
+      throw new Error("invalid read");
+    }
+    //joypad
+    else if (addr === 0xff00) {
+    }
+    //Serial Data
+    else if (addr >= 0xff01 && addr <= 0xff02) {
+    }
+    //Timer
+    else if (addr >= 0xff04 && addr <= 0xff02) {
+    }
+    //Audio
+    else if (addr >= 0xff10 && addr <= 0xff3f) {
+    }
+    //GPU LCD features
+    else if (addr >= 0xff40 && addr < 0xff6b) {
+    } else if (addr >= 0xff80 && addr <= 0xfffe) {
+      return this.ram[addr];
+    } else if (addr === 0xffff) {
+      return this.ram[addr];
+    } else {
+      throw new Error("invalid read addr");
+    }
   }
 
   public readWord(addr: number) {

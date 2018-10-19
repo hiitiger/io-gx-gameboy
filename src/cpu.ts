@@ -1,4 +1,4 @@
-import { Memory } from "./memory.js";
+import { MMU } from "./mmu.js";
 import { Cartridge } from "./cartridge.js";
 import { h2i, w2h, b2b, opcodeHex, b2h } from "./utils.js";
 import { FLAGOFFSETS } from "./specs.js";
@@ -11,7 +11,7 @@ function trimRegAddr(s: string) {
 }
 
 export class Cpu {
-  private mem: Memory;
+  private mem: MMU;
   private registers: Registers;
   private cycles: number;
   private ops: IOpcodeDescription[];
@@ -20,7 +20,7 @@ export class Cpu {
   private halted: boolean = false;
   private IME: boolean = true;
 
-  constructor(mem: Memory) {
+  constructor(mem: MMU) {
     this.cycles = 0;
     this.mem = mem;
     this.registers = new Registers();

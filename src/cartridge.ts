@@ -39,7 +39,7 @@ export class Cartridge {
   }
 
   public readByte(addr: number) {
-    if (addr < 0 || addr > RamSize) {
+    if (addr < 0 || addr > 0x7fff) {
       throw new Error("out of bounds");
     }
 

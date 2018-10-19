@@ -1,8 +1,9 @@
-import { Memory } from "./memory.js";
+import { MMU } from "./mmu.js";
 import { loadRom, loadBoot } from "./loader.js";
 import { Cartridge } from "./cartridge.js";
 import { logBuffer } from "./utils.js";
 import { Cpu } from "./cpu.js";
+import { Gpu } from "./gpu.js";
 
 function run(cpu: Cpu) {
   cpu.tick();
@@ -11,13 +12,16 @@ function run(cpu: Cpu) {
 }
 
 async function main() {
-  const mem = new Memory();
+  const mem = new MMU();
   const bios = await loadBoot();
-  mem.load(0, bios);
+  mem.loadBios(bios);
 
   const rombin = await loadRom("Tetris");
   const rom = new Cartridge(rombin);
   mem.loadRom(rom);
+
+  const gpu = new Gpu();
+  mem.loadGpu(gpu);
 
   console.log(rom.type);
   // logBuffer(bios);
