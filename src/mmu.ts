@@ -28,7 +28,7 @@ export class MMU {
     }
 
     if (this.inboot) {
-      if (addr < BiosSize) {
+      if (addr <= 0xff) {
         return this.bios[addr];
       } else {
         logger.info("boot finished");
@@ -79,7 +79,10 @@ export class MMU {
     }
     //GPU LCD features
     else if (addr >= 0xff40 && addr < 0xff6b) {
-    } else if (addr >= 0xff80 && addr <= 0xfffe) {
+      return this.gpu.readByte(addr)
+    }
+    //MMU
+    else if (addr >= 0xff80 && addr <= 0xfffe) {
       return this.ram[addr];
     } else if (addr === 0xffff) {
       return this.ram[addr];
@@ -94,7 +97,72 @@ export class MMU {
     return (high << 8) + low;
   }
 
-  public writeByte(addr: number, value: number) {}
+  public writeByte(addr: number, value: number) {
+    if (addr < 0 || addr > RamSize) {
+      throw new Error("out of bounds");
+    }
+
+    if (this.inboot) {
+      if (addr <= 0xff) {
+        logger.error(`write to address 0x${addr.toString(16)}`);
+        return;
+      }
+    }
+
+    //Cartridge
+    if (addr >= 0x0000 && addr <= 0x7fff) {
+      this.rom.writeByte(addr, value);
+    }
+    //Cartridge
+    else if (addr >= 0xa000 && addr <= 0xbfff) {
+      this.rom.writeByte(addr, value);
+    }
+    //MMU ram
+    else if (addr >= 0xc000 && addr <= 0xdfff) {
+      this.ram[addr] = value;
+    }
+    //MMU ram mirror
+    else if (addr >= 0xe000 && addr <= 0xfdff) {
+      this.ram[addr] = value;
+      this.ram[addr - 0x2000] = value;
+    }
+    //GPU vram
+    else if (addr >= 0x8000 && addr <= 0xbfff) {
+      this.gpu.writeByte(addr, value);
+    }
+    //GPU sprite attribute table
+    else if (addr >= 0xfe00 && addr <= 0xfe9f) {
+      this.gpu.writeByte(addr, value);
+    }
+    //MMU
+    else if (addr >= 0xfea0 && addr <= 0xfeff) {
+      throw new Error("invalid read");
+    }
+    //joypad
+    else if (addr === 0xff00) {
+    }
+    //Serial Data
+    else if (addr >= 0xff01 && addr <= 0xff02) {
+    }
+    //Timer
+    else if (addr >= 0xff04 && addr <= 0xff02) {
+    }
+    //Audio
+    else if (addr >= 0xff10 && addr <= 0xff3f) {
+    }
+    //GPU LCD features
+    else if (addr >= 0xff40 && addr < 0xff6b) {
+      this.gpu.writeByte(addr, value);
+    }
+    //MMU
+    else if (addr >= 0xff80 && addr <= 0xfffe) {
+      this.ram[addr] = value;
+    } else if (addr === 0xffff) {
+      this.ram[addr] = value;
+    } else {
+      throw new Error("invalid read addr");
+    }
+  }
 
   public writeWord(addr: number, value: number) {
     this.writeByte(addr, value & 0xff);

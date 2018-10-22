@@ -1,4 +1,5 @@
 import { RamSize } from "./specs.js";
+import * as logger from "./logger.js";
 
 export enum CartridgeType {
   ROM = 0x00,
@@ -30,19 +31,32 @@ export function getCatridgeType(data: Uint8Array) {
 }
 
 export class Cartridge {
-  public data: Uint8Array;
+  public rom: Uint8Array;
+  public ram: Uint8Array;
   public type: string;
 
   constructor(data: Uint8Array) {
-    this.data = data;
+    this.rom = data;
+    this.ram = new Uint8Array(0x2000);
     this.type = getCatridgeType(data);
   }
 
   public readByte(addr: number) {
-    if (addr < 0 || addr > 0x7fff) {
-      throw new Error("out of bounds");
+    if (addr >= 0 && addr < 0x7fff) {
+      return this.rom[addr];
+    } else if (addr >= 0xa000 && addr <= 0xbfff) {
+      return this.ram[addr];
+    } else {
+      logger.error(`read from address 0x${addr.toString(16)}`);
+      return 0;
     }
+  }
 
-    return this.data[addr];
+  public writeByte(addr: number, value: number) {
+    if (addr >= 0xa000 && addr <= 0xbfff) {
+      this.ram[addr - 0xa000] = value;
+    } else {
+      logger.error(`write to address 0x${addr.toString(16)}`);
+    }
   }
 }
