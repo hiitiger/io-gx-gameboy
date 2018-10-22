@@ -28,8 +28,11 @@ async function main() {
   // logBuffer(rombin);
 
   const cpu = new Cpu(mem);
-  cpu.init();
+  // cpu.init();
   cpu.printReg();
+
+  (<any>window).cpu = cpu
+
   run(cpu);
 }
 

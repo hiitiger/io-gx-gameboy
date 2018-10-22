@@ -20,6 +20,8 @@ export class Cpu {
   private halted: boolean = false;
   private IME: boolean = true;
 
+  public paused: boolean = false;
+
   constructor(mem: MMU) {
     this.cycles = 0;
     this.mem = mem;
@@ -32,13 +34,13 @@ export class Cpu {
   }
 
   public printReg() {
-    logger.debug(`AF: ${w2h(this.registers.AF)}`);
-    logger.debug(`BC: ${w2h(this.registers.BC)}`);
-    logger.debug(`DE: ${w2h(this.registers.DE)}`);
-    logger.debug(`HL: ${w2h(this.registers.HL)}`);
-    logger.debug(`SP: ${w2h(this.registers.SP)}`);
-    logger.debug(`PC: ${w2h(this.registers.PC)}`);
-    logger.debug(`FLAG: ${b2b(this.registers.F)}`);
+    logger.info(`AF: ${w2h(this.registers.AF)}`);
+    logger.info(`BC: ${w2h(this.registers.BC)}`);
+    logger.info(`DE: ${w2h(this.registers.DE)}`);
+    logger.info(`HL: ${w2h(this.registers.HL)}`);
+    logger.info(`SP: ${w2h(this.registers.SP)}`);
+    logger.info(`PC: ${w2h(this.registers.PC)}`);
+    logger.info(`FLAG: ${b2b(this.registers.F)}`);
   }
 
   public init() {
@@ -62,7 +64,7 @@ export class Cpu {
       return;
     }
 
-    while (this.cycles < cyclesPerFrame) {
+    while (this.cycles < cyclesPerFrame && !this.paused) {
       this.excute_next_opcode();
       // this.printReg();
       logger.debug(`this.cycles ${this.cycles}`);
@@ -73,16 +75,12 @@ export class Cpu {
 
   public excute_next_opcode() {
     const opcode = this.cpu_mem8bitRead();
-    logger.debug(`PC:${this.registers.PC}, opcode: ${opcodeHex(opcode)}`);
-
-    if (opcode ===  0x1a) {
-      debugger;
-    }
 
     if (opcode === 0xcb) {
       this.excute_ext_opcode();
     } else {
       const instruction = this.ops[opcode];
+      logger.debug(`PC:${this.registers.PC}, opcode: ${opcodeHex(opcode)} ${instruction.fn}`);
 
       const cpu = this;
       instruction.fn(cpu);
@@ -91,9 +89,9 @@ export class Cpu {
 
   public excute_ext_opcode() {
     const opcode = this.cpu_mem8bitRead();
-    logger.debug(`PC:${this.registers.PC}, exopcode: ${opcodeHex(opcode)}`);
 
     const instruction = this.cbops[opcode];
+    logger.debug(`PC:${this.registers.PC}, exopcode: ${opcodeHex(opcode)} ${instruction.fn}`);
 
     const cpu = this;
     instruction.fn(cpu);

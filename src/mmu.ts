@@ -4,11 +4,11 @@ import * as logger from "./logger.js";
 import { Gpu } from "./gpu.js";
 
 export class MMU {
-  private inboot: boolean = true;
   bios: Uint8Array;
   ram: Uint8Array = new Uint8Array(RamSize);
   rom: Cartridge;
   gpu: Gpu;
+
 
   public loadBios(data: Uint8Array) {
     this.bios = data;
@@ -27,13 +27,9 @@ export class MMU {
       throw new Error("out of bounds");
     }
 
-    if (this.inboot) {
+    if (this.ram[0xff50] === 0) {
       if (addr <= 0xff) {
         return this.bios[addr];
-      } else {
-        logger.info("boot finished");
-        debugger;
-        this.inboot = false;
       }
     }
 
@@ -78,8 +74,24 @@ export class MMU {
     else if (addr >= 0xff10 && addr <= 0xff3f) {
     }
     //GPU LCD features
-    else if (addr >= 0xff40 && addr < 0xff6b) {
-      return this.gpu.readByte(addr)
+    else if (addr >= 0xff40 && addr < 0xff4c) {
+      return this.gpu.readByte(addr);
+    }
+    else if (addr >= 0xff4e && addr < 0xff4f) {
+      return this.gpu.readByte(addr);
+    }
+    else if (addr >= 0xff51 && addr < 0xff55) {
+      return this.gpu.readByte(addr);
+    }
+    else if (addr >= 0xff57 && addr < 0xff6b) {
+      return this.gpu.readByte(addr);
+    }
+    else if (addr >= 0xff6d && addr < 0xff6f) {
+      return this.gpu.readByte(addr);
+    }
+    //boot flag
+    else if (addr === 0xff50) {
+      return this.ram[addr]
     }
     //MMU
     else if (addr >= 0xff80 && addr <= 0xfffe) {
@@ -102,7 +114,7 @@ export class MMU {
       throw new Error("out of bounds");
     }
 
-    if (this.inboot) {
+    if (this.ram[0xff50] === 0) {
       if (addr <= 0xff) {
         logger.error(`write to address 0x${addr.toString(16)}`);
         return;
@@ -151,8 +163,24 @@ export class MMU {
     else if (addr >= 0xff10 && addr <= 0xff3f) {
     }
     //GPU LCD features
-    else if (addr >= 0xff40 && addr < 0xff6b) {
+    else if (addr >= 0xff40 && addr < 0xff4c) {
       this.gpu.writeByte(addr, value);
+    }
+    else if (addr >= 0xff4e && addr < 0xff4f) {
+      this.gpu.writeByte(addr, value);
+    }
+    else if (addr >= 0xff51 && addr < 0xff55) {
+      this.gpu.writeByte(addr, value);
+    }
+    else if (addr >= 0xff57 && addr < 0xff6b) {
+      this.gpu.writeByte(addr, value);
+    }
+    else if (addr >= 0xff6d && addr < 0xff6f) {
+      this.gpu.writeByte(addr, value);
+    }
+    else if (addr === 0xff50) {
+      this.ram[addr] = value
+      debugger
     }
     //MMU
     else if (addr >= 0xff80 && addr <= 0xfffe) {
