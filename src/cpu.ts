@@ -1,6 +1,6 @@
 import { MMU } from "./mmu.js";
 import { Cartridge } from "./cartridge.js";
-import { h2i, w2h, b2b, opcodeHex, b2h } from "./utils.js";
+import { h2i, w2h, b2b, toByteHex, b2h } from "./utils.js";
 import { FLAGOFFSETS } from "./specs.js";
 import { Register, Registers } from "./register.js";
 import * as logger from "./logger.js";
@@ -80,7 +80,11 @@ export class Cpu {
       this.excute_ext_opcode();
     } else {
       const instruction = this.ops[opcode];
-      logger.debug(`PC:${this.registers.PC}, opcode: ${opcodeHex(opcode)} ${instruction.fn}`);
+      logger.debug(
+        `PC:0x${(this.registers.PC-1).toString(16)}, opcode: ${toByteHex(opcode)} ${
+          instruction.fn
+        }`
+      );
 
       const cpu = this;
       instruction.fn(cpu);
@@ -91,7 +95,11 @@ export class Cpu {
     const opcode = this.cpu_mem8bitRead();
 
     const instruction = this.cbops[opcode];
-    logger.debug(`PC:${this.registers.PC}, exopcode: ${opcodeHex(opcode)} ${instruction.fn}`);
+    logger.debug(
+      `PC:0x${(this.registers.PC-1).toString(16)}, exopcode: ${toByteHex(opcode)} ${
+        instruction.fn
+      }`
+    );
 
     const cpu = this;
     instruction.fn(cpu);
@@ -152,6 +160,25 @@ export class Cpu {
     } else {
       this.cycles += 12;
     }
+  }
+
+  public RSTn(n: number) {
+    this.PUSH_16bit(this.registers.PC);
+    this.registers.PC = n;
+    this.cycles += 12;
+  }
+
+  public RET() {
+    this.registers.PC = this.POP_16bit();
+    this.cycles += 8;
+    this.printReg();
+  }
+
+  public RET_CC(flag: string, cond: boolean) {
+    if (this.readFlag(flag) === cond) {
+      this.registers.PC = this.POP_16bit();
+    }
+    this.cycles += 8;
   }
 
   public INC_r(r: string) {
@@ -239,7 +266,7 @@ export class Cpu {
     this.writeMemory8bit(this.registers.SP, value & 0xff);
   }
 
-  public POP_8bit() {
+  public POP_16bit() {
     let value = this.readMemory8bit(this.registers.SP);
     value |= (this.readMemory8bit(this.registers.SP + 1) << 8) & 0xff;
     this.registers.SP = this.registers.SP + 2;
@@ -568,7 +595,7 @@ export class Cpu {
     this.registers.NF = false;
     this.registers.HF = (this.registers.A & 0x0f) < (subValue & 0x0f);
     this.registers.CF = value < 0;
-    this.cycles += 4;
+    this.cycles += 8;
   }
 
   public ADD_HL_rr(rr: string) {

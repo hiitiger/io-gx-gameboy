@@ -2,7 +2,7 @@ export function h2i(h: string) {
   return parseInt(h, 16);
 }
 
-export function opcodeHex(i: number) {
+export function toByteHex(i: number) {
   return "0x" + ("00" + i.toString(16).toUpperCase()).slice(-2);
 }
 

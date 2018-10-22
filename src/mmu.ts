@@ -68,7 +68,7 @@ export class MMU {
     else if (addr >= 0xff01 && addr <= 0xff02) {
     }
     //Timer
-    else if (addr >= 0xff04 && addr <= 0xff02) {
+    else if (addr >= 0xff04 && addr <= 0xff07) {
     }
     //Audio
     else if (addr >= 0xff10 && addr <= 0xff3f) {
@@ -98,7 +98,11 @@ export class MMU {
       return this.ram[addr];
     } else if (addr === 0xffff) {
       return this.ram[addr];
-    } else {
+    }
+    else if (addr === 0xff0f) {
+      return this.ram[addr];
+    }
+    else {
       throw new Error("invalid read addr");
     }
   }
@@ -157,7 +161,7 @@ export class MMU {
     else if (addr >= 0xff01 && addr <= 0xff02) {
     }
     //Timer
-    else if (addr >= 0xff04 && addr <= 0xff02) {
+    else if (addr >= 0xff04 && addr <= 0xff07) {
     }
     //Audio
     else if (addr >= 0xff10 && addr <= 0xff3f) {
@@ -187,7 +191,11 @@ export class MMU {
       this.ram[addr] = value;
     } else if (addr === 0xffff) {
       this.ram[addr] = value;
-    } else {
+    } 
+    else if(addr === 0xff0f) {
+      this.ram[addr] = value;
+    }
+    else {
       throw new Error("invalid read addr");
     }
   }

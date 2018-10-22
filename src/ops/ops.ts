@@ -802,6 +802,47 @@ export const buildOpMap = (ops: any[]): IOpcodeDescription[] => {
   };
 
   //RST n
+  ops[0xc7] = {
+    fn: (cpu: Cpu) => cpu.RSTn(0)
+  };
+  ops[0xcf] = {
+    fn: (cpu: Cpu) => cpu.RSTn(8)
+  };
+  ops[0xd7] = {
+    fn: (cpu: Cpu) => cpu.RSTn(0x10)
+  };
+  ops[0xdf] = {
+    fn: (cpu: Cpu) => cpu.RSTn(0x18)
+  };
+  ops[0xe7] = {
+    fn: (cpu: Cpu) => cpu.RSTn(0x20)
+  };
+  ops[0xef] = {
+    fn: (cpu: Cpu) => cpu.RSTn(0x28)
+  };
+  ops[0xf7] = {
+    fn: (cpu: Cpu) => cpu.RSTn(0x30)
+  };
+  ops[0xff] = {
+    fn: (cpu: Cpu) => cpu.RSTn(0x38)
+  };
+
+  //RET
+  ops[0xc9] = {
+    fn: (cpu: Cpu) => cpu.RET()
+  };
+  ops[0xc0] = {
+    fn: (cpu: Cpu) => cpu.RET_CC("Z", false)
+  };
+  ops[0xc8] = {
+    fn: (cpu: Cpu) => cpu.RET_CC("Z", true)
+  };
+  ops[0xd0] = {
+    fn: (cpu: Cpu) => cpu.RET_CC("C", false)
+  };
+  ops[0xd8] = {
+    fn: (cpu: Cpu) => cpu.RET_CC("C", true)
+  };
 
   //
   ops[0x36] = {
